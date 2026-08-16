@@ -346,3 +346,97 @@ def guardar_docente(username: str, password: str, curso: str):
         raise ValueError("Ese docente ya existe.")
     rows.append({"usuario": username, "password": password, "curso": curso})
     write_csv_rows(TEACHER_FILE, rows, ["usuario", "password", "curso"])
+
+
+def actualizar_password_docente(username: str, nueva_password: str):
+    """Actualiza la contraseña de un docente."""
+    rows = read_csv_rows(TEACHER_FILE)
+    found = False
+    for row in rows:
+        if row.get("usuario") == username:
+            row["password"] = nueva_password
+            found = True
+            break
+    if not found:
+        raise ValueError(f"Docente '{username}' no encontrado.")
+    write_csv_rows(TEACHER_FILE, rows, ["usuario", "password", "curso"])
+
+
+def actualizar_curso_docente(username: str, nuevo_curso: str):
+    """Actualiza el curso asignado a un docente."""
+    rows = read_csv_rows(TEACHER_FILE)
+    found = False
+    for row in rows:
+        if row.get("usuario") == username:
+            row["curso"] = nuevo_curso
+            found = True
+            break
+    if not found:
+        raise ValueError(f"Docente '{username}' no encontrado.")
+    write_csv_rows(TEACHER_FILE, rows, ["usuario", "password", "curso"])
+
+
+def eliminar_docente(username: str):
+    """Elimina un docente del sistema."""
+    rows = read_csv_rows(TEACHER_FILE)
+    rows_updated = [r for r in rows if r.get("usuario") != username]
+    if len(rows_updated) == len(rows):
+        raise ValueError(f"Docente '{username}' no encontrado.")
+    write_csv_rows(TEACHER_FILE, rows_updated, ["usuario", "password", "curso"])
+
+
+def eliminar_alumno(username: str):
+    """Elimina un alumno del sistema."""
+    rows = read_csv_rows(STUDENT_FILE)
+    rows_updated = [r for r in rows if r.get("usuario") != username]
+    if len(rows_updated) == len(rows):
+        raise ValueError(f"Alumno '{username}' no encontrado.")
+    write_csv_rows(STUDENT_FILE, rows_updated, ["usuario", "password", "grado"])
+
+
+def actualizar_pregunta_csv(grade: str, course: str, idx: int, nueva_pregunta: str, nuevas_opciones: list, nueva_respuesta: str):
+    """Actualiza una pregunta existente por su índice."""
+    path = get_grade_file(grade)
+    rows = read_csv_rows(path)
+    matches = [i for i, row in enumerate(rows) if (row.get("materia") or "").strip() == course]
+    
+    if idx < 0 or idx >= len(matches):
+        raise ValueError("Índice de pregunta inválido.")
+    
+    row_idx = matches[idx]
+    rows[row_idx] = {
+        "materia": course,
+        "pregunta": nueva_pregunta,
+        "opcion_1": nuevas_opciones[0],
+        "opcion_2": nuevas_opciones[1],
+        "opcion_3": nuevas_opciones[2],
+        "opcion_4": nuevas_opciones[3],
+        "respuesta": nueva_respuesta,
+    }
+    write_csv_rows(path, rows, QUESTION_HEADERS)
+
+
+def obtener_alumno(username: str):
+    """Obtiene los datos de un alumno específico."""
+    for row in read_csv_rows(STUDENT_FILE):
+        if row.get("usuario") == username:
+            return row
+    return None
+
+
+def obtener_docente(username: str):
+    """Obtiene los datos de un docente específico."""
+    for row in read_csv_rows(TEACHER_FILE):
+        if row.get("usuario") == username:
+            return row
+    return None
+
+
+def listar_alumnos():
+    """Retorna lista de todos los alumnos."""
+    return read_csv_rows(STUDENT_FILE)
+
+
+def listar_docentes():
+    """Retorna lista de todos los docentes."""
+    return read_csv_rows(TEACHER_FILE)
