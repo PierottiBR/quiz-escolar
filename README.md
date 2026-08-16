@@ -131,6 +131,43 @@ Todos los datos se guardan en archivos CSV en la carpeta `data/`:
 
 Los datos persisten entre sesiones y pueden editarse directamente en Excel o cualquier editor de CSV.
 
+### Funciones de Actualización CSV
+
+La aplicación incluye funciones completas para gestionar todos los datos:
+
+**Gestión de Alumnos:**
+- `guardar_alumno()` - Crear nuevo alumno
+- `obtener_alumno()` - Obtener datos de alumno
+- `actualizar_password_alumno()` - Cambiar contraseña
+- `actualizar_grado_alumno()` - Cambiar grado
+- `eliminar_alumno()` - Eliminar alumno del sistema
+- `listar_alumnos()` - Obtener lista de todos los alumnos
+
+**Gestión de Docentes:**
+- `guardar_docente()` - Crear nuevo docente
+- `obtener_docente()` - Obtener datos de docente
+- `actualizar_password_docente()` - Cambiar contraseña
+- `actualizar_curso_docente()` - Cambiar materia asignada
+- `eliminar_docente()` - Eliminar docente del sistema
+- `listar_docentes()` - Obtener lista de todos los docentes
+
+**Gestión de Preguntas:**
+- `guardar_pregunta_csv()` - Agregar nueva pregunta
+- `cargar_preguntas_csv()` - Cargar preguntas de una materia
+- `actualizar_pregunta_csv()` - Actualizar pregunta existente
+- `eliminar_pregunta_csv()` - Eliminar pregunta
+- `listar_materias_del_grado()` - Obtener materias disponibles por grado
+
+### Verificación de Funciones
+
+Se incluye un script de prueba (`test_csv_functions.py`) que valida todas las operaciones:
+
+```bash
+python test_csv_functions.py
+```
+
+Todas las funciones están completamente probadas y validadas.
+
 ## 🔐 Seguridad
 
 ⚠️ **Nota**: Esta es una aplicación educativa. No usa cifrado de contraseñas ni bases de datos avanzadas. Para un entorno de producción real, se recomienda:
