@@ -24,8 +24,9 @@ share/python-wheels/
 MANIFEST
 
 # Streamlit
-.streamlit/
 .streamlit_cache/
+.streamlit/secrets.toml
+.streamlit/cache/
 
 # Virtual environments
 venv/
