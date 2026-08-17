@@ -1,4 +1,5 @@
 import streamlit as st
+from datetime import datetime, timedelta
 
 from app_utils import (
     COURSE_OPTIONS,
@@ -18,6 +19,14 @@ from app_utils import (
     actualizar_password_alumno,
     STUDENT_FILE,
     TEACHER_FILE,
+    crear_torneo,
+    listar_torneos_activos,
+    listar_todos_torneos,
+    actualizar_torneo,
+    eliminar_torneo,
+    obtener_ranking_torneo,
+    obtener_estadisticas_torneo,
+    obtener_respuestas_alumno_torneo,
 )
 
 apply_custom_style()
@@ -189,3 +198,150 @@ else:
             guardar_pregunta_csv(grado_admin, curso_admin, nueva_pregunta.strip(), [op.strip() for op in nuevas_opciones], respuesta_correcta.strip())
             st.success("Pregunta guardada correctamente.")
             st.rerun()
+
+    st.divider()
+    st.header("Gestión de Torneos")
+    
+    tab_crear, tab_ver, tab_ranking = st.tabs(["Crear Torneo", "Ver Torneos", "Rankings"])
+    
+    with tab_crear:
+        st.subheader("Crear nuevo torneo")
+        nombre_torneo = st.text_input("Nombre del torneo", key="torneo_nombre")
+        desc_torneo = st.text_area("Descripción", key="torneo_desc")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            fecha_inicio = st.date_input("Fecha de inicio", key="torneo_inicio")
+        with col2:
+            fecha_limite = st.date_input("Fecha límite", value=datetime.now() + timedelta(days=7), key="torneo_limite")
+        with col3:
+            preguntas_dia = st.number_input("Preguntas por día", min_value=1, max_value=50, value=10, key="torneo_preguntas_dia")
+        
+        grado_torneo = st.selectbox("Grado", GRADE_OPTIONS, key="torneo_grado")
+        materia_torneo = st.selectbox("Materia", COURSE_OPTIONS, key="torneo_materia")
+        
+        if st.button("Crear torneo"):
+            if not nombre_torneo.strip():
+                st.warning("Ingresa un nombre para el torneo.")
+            elif not desc_torneo.strip():
+                st.warning("Ingresa una descripción.")
+            else:
+                try:
+                    torneo_id = crear_torneo(
+                        nombre=nombre_torneo.strip(),
+                        descripcion=desc_torneo.strip(),
+                        fecha_inicio=fecha_inicio.strftime("%d/%m/%Y"),
+                        fecha_limite=fecha_limite.strftime("%d/%m/%Y"),
+                        preguntas_por_dia=int(preguntas_dia),
+                        grado=grado_torneo,
+                        materia=materia_torneo,
+                        creador=st.session_state.teacher["usuario"]
+                    )
+                    st.success(f"Torneo creado correctamente. ID: {torneo_id}")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error al crear torneo: {e}")
+    
+    with tab_ver:
+        st.subheader("Torneos activos")
+        torneos_activos = listar_torneos_activos()
+        
+        if not torneos_activos:
+            st.info("No hay torneos activos en este momento.")
+        else:
+            for torneo in torneos_activos:
+                with st.expander(f"🏆 {torneo['nombre']} ({torneo['grado']} - {torneo['materia']})"):
+                    st.write(f"**Descripción:** {torneo['descripcion']}")
+                    st.write(f"**Fecha inicio:** {torneo['fecha_inicio']}")
+                    st.write(f"**Fecha límite:** {torneo['fecha_limite']}")
+                    st.write(f"**Preguntas por día:** {torneo['preguntas_por_dia']}")
+                    st.write(f"**Creador:** {torneo['creador']}")
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        nueva_fecha = st.date_input("Cambiar fecha límite", key=f"fecha_limite_{torneo['torneo_id']}")
+                        if st.button("Actualizar fecha", key=f"actualizar_fecha_{torneo['torneo_id']}"):
+                            try:
+                                actualizar_torneo(torneo['torneo_id'], fecha_limite=nueva_fecha.strftime("%d/%m/%Y"))
+                                st.success("Fecha actualizada.")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error: {e}")
+                    
+                    with col2:
+                        if st.button("Eliminar torneo", key=f"eliminar_torneo_{torneo['torneo_id']}"):
+                            try:
+                                eliminar_torneo(torneo['torneo_id'])
+                                st.success("Torneo eliminado.")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error: {e}")
+    
+    with tab_ranking:
+        st.subheader("Ranking de torneos")
+        todos_torneos = listar_todos_torneos()
+        
+        if not todos_torneos:
+            st.info("No hay torneos disponibles.")
+        else:
+            torneo_seleccionado = st.selectbox(
+                "Selecciona un torneo",
+                [t["nombre"] for t in todos_torneos],
+                key="ranking_torneo_select"
+            )
+            
+            torneo_obj = next(t for t in todos_torneos if t["nombre"] == torneo_seleccionado)
+            
+            # Estadísticas
+            stats = obtener_estadisticas_torneo(torneo_obj["torneo_id"])
+            
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Total Respuestas", stats["total_respuestas"])
+            with col2:
+                st.metric("Respuestas Correctas", stats["respuestas_correctas"])
+            with col3:
+                st.metric("Porcentaje Acierto", f"{stats['porcentaje_acierto']}%")
+            with col4:
+                st.metric("Estudiantes", stats["estudiantes_participantes"])
+            
+            st.divider()
+            
+            # Ranking
+            ranking = obtener_ranking_torneo(torneo_obj["torneo_id"])
+            
+            if ranking:
+                st.subheader("Posiciones")
+                ranking_data = []
+                for pos, (usuario, stats_user) in enumerate(ranking, 1):
+                    ranking_data.append({
+                        "Posición": pos,
+                        "Usuario": usuario,
+                        "Correctas": stats_user["correctas"],
+                        "Total": stats_user["total"],
+                        "Porcentaje": f"{round(stats_user['correctas'] / stats_user['total'] * 100, 1)}%"
+                    })
+                
+                st.dataframe(ranking_data, use_container_width=True, hide_index=True)
+                
+                # Detalles de cada alumno
+                st.divider()
+                st.subheader("Detalles por estudiante")
+                
+                alumno_ver = st.selectbox("Selecciona un alumno", [r[0] for r in ranking], key="ranking_alumno_ver")
+                respuestas_alumno = obtener_respuestas_alumno_torneo(torneo_obj["torneo_id"], alumno_ver)
+                
+                if respuestas_alumno:
+                    respuestas_data = []
+                    for resp in respuestas_alumno:
+                        respuestas_data.append({
+                            "Fecha": resp.get("fecha"),
+                            "Hora": resp.get("hora"),
+                            "Pregunta ID": resp.get("pregunta_id"),
+                            "Respuesta": resp.get("respuesta"),
+                            "Correcta": "✓" if resp.get("es_correcta") == "1" else "✗"
+                        })
+                    
+                    st.dataframe(respuestas_data, use_container_width=True, hide_index=True)
+            else:
+                st.info("No hay respuestas registradas en este torneo aún.")
