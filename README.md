@@ -10,6 +10,12 @@ Una aplicación interactiva de preguntas y respuestas (estilo Preguntados) const
 - **Juego Interactivo**: Alumnos responden 5 preguntas aleatorias por materia con feedback inmediato
 - **Historial de Resultados**: Seguimiento de puntuaciones y desempeño de estudiantes
 - **Gestión de Preguntas**: Docentes pueden agregar, eliminar y organizar preguntas por grado y materia
+- **🏆 Sistema de Torneos**: 
+  - Crear torneos con fechas específicas de inicio y límite
+  - Establecer límite diario de preguntas por alumno
+  - Tracking automático de respuestas correctas e incorrectas
+  - Rankings en tiempo real con estadísticas de desempeño
+  - Los alumnos compiten respondiendo preguntas en el período del torneo
 - **Almacenamiento CSV**: Base de datos simple y portable basada en archivos CSV
 - **Diseño Institucional**: Branding escolar con logo personalizable y paleta de colores profesionales
 
@@ -167,6 +173,78 @@ python test_csv_functions.py
 ```
 
 Todas las funciones están completamente probadas y validadas.
+
+## 🏆 Sistema de Torneos
+
+El sistema incluye un completo módulo de torneos que permite a los docentes organizar competencias educativas:
+
+### Para Docentes
+
+**Crear Torneos:**
+- Nombre y descripción del torneo
+- Fecha de inicio y fecha límite
+- Establecer límite diario de preguntas que pueden responder los alumnos
+- Seleccionar grado y materia del torneo
+- El sistema registra automáticamente al docente como creador
+
+**Gestionar Torneos:**
+- Ver lista de torneos activos
+- Actualizar fechas y configuración
+- Eliminar torneos completos
+- Ver rankings en tiempo real
+
+**Rankings y Estadísticas:**
+- Tabla de posiciones ordenada por respuestas correctas
+- Estadísticas generales del torneo (total respuestas, porcentaje acierto)
+- Detalles individuales de cada alumno participante
+- Histórico de respuestas por estudiante
+
+### Para Alumnos
+
+**Participar en Torneos:**
+- Ver torneos disponibles para su grado
+- Información del torneo (descripción, materia, fecha límite)
+- Indicador de preguntas respondidas vs límite diario
+- Una pregunta por vez durante el torneo
+- Feedback inmediato de respuestas correctas/incorrectas
+
+**Límites Diarios:**
+- El sistema controla automáticamente el límite de preguntas por día
+- Los alumnos no pueden responder más preguntas una vez alcanzado el límite
+- Los límites se reinician cada día
+- Las preguntas se cuentan sin importar si son correctas o incorrectas
+
+**Funciones de Torneos Disponibles:**
+
+```python
+# Crear y gestionar torneos
+crear_torneo()                        # Crear nuevo torneo
+obtener_torneo()                      # Obtener datos de un torneo
+listar_torneos_activos()              # Ver torneos vigentes
+listar_todos_torneos()                # Ver todos los torneos
+actualizar_torneo()                   # Modificar torneo
+eliminar_torneo()                     # Eliminar torneo
+
+# Participación y respuestas
+registrar_respuesta_torneo()           # Guardar respuesta de alumno
+contar_preguntas_hoy_alumno()          # Contar respuestas hoy
+puede_responder_hoy()                  # Verificar límite diario
+obtener_respuestas_alumno_torneo()     # Historial de respuestas
+
+# Rankings y estadísticas
+obtener_ranking_torneo()               # Tabla de posiciones
+obtener_estadisticas_torneo()          # Estadísticas generales
+```
+
+### Pruebas de Torneos
+
+Se incluye un script completo de prueba (`test_tournament_functions.py`):
+
+```bash
+python test_tournament_functions.py
+```
+
+Todas las funciones de torneos están validadas y funcionando correctamente.
 
 ## 📚 Datos de Referencia
 
