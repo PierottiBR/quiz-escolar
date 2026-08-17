@@ -13,10 +13,14 @@ DATA_DIR.mkdir(exist_ok=True)
 TEACHER_FILE = DATA_DIR / "docentes.csv"
 STUDENT_FILE = DATA_DIR / "alumnos.csv"
 RESULT_FILE = DATA_DIR / "resultados.csv"
+TOURNAMENT_FILE = DATA_DIR / "torneos.csv"
+TOURNAMENT_RESPONSES_FILE = DATA_DIR / "respuestas_torneo.csv"
 GRADE_OPTIONS = ["4° Grado", "5° Grado", "6° Grado"]
 COURSE_OPTIONS = ["Matemática", "Lengua", "Ciencias", "Sociales"]
 QUESTION_HEADERS = ["materia", "pregunta", "opcion_1", "opcion_2", "opcion_3", "opcion_4", "respuesta"]
 RESULT_HEADERS = ["usuario", "grado", "materia", "puntaje", "total", "fecha"]
+TOURNAMENT_HEADERS = ["torneo_id", "nombre", "descripcion", "fecha_inicio", "fecha_limite", "preguntas_por_dia", "grado", "materia", "creador", "fecha_creacion"]
+TOURNAMENT_RESPONSES_HEADERS = ["torneo_id", "usuario", "pregunta_id", "respuesta", "es_correcta", "fecha", "hora"]
 
 
 def apply_custom_style():
@@ -440,3 +444,196 @@ def listar_alumnos():
 def listar_docentes():
     """Retorna lista de todos los docentes."""
     return read_csv_rows(TEACHER_FILE)
+
+
+# ===== FUNCIONES DE TORNEOS =====
+
+def crear_torneo(nombre: str, descripcion: str, fecha_inicio: str, fecha_limite: str, preguntas_por_dia: int, grado: str, materia: str, creador: str):
+    """Crea un nuevo torneo."""
+    ensure_csv(TOURNAMENT_FILE, TOURNAMENT_HEADERS)
+    rows = read_csv_rows(TOURNAMENT_FILE)
+    
+    # Generar torneo_id basado en timestamp
+    torneo_id = f"torneo_{int(datetime.now().timestamp())}"
+    
+    rows.append({
+        "torneo_id": torneo_id,
+        "nombre": nombre,
+        "descripcion": descripcion,
+        "fecha_inicio": fecha_inicio,
+        "fecha_limite": fecha_limite,
+        "preguntas_por_dia": str(preguntas_por_dia),
+        "grado": grado,
+        "materia": materia,
+        "creador": creador,
+        "fecha_creacion": datetime.now().strftime("%d/%m/%Y %H:%M"),
+    })
+    write_csv_rows(TOURNAMENT_FILE, rows, TOURNAMENT_HEADERS)
+    return torneo_id
+
+
+def obtener_torneo(torneo_id: str):
+    """Obtiene los datos de un torneo específico."""
+    for row in read_csv_rows(TOURNAMENT_FILE):
+        if row.get("torneo_id") == torneo_id:
+            return row
+    return None
+
+
+def listar_torneos_activos():
+    """Retorna lista de torneos cuya fecha límite aún no ha pasado."""
+    ensure_csv(TOURNAMENT_FILE, TOURNAMENT_HEADERS)
+    torneos = read_csv_rows(TOURNAMENT_FILE)
+    hoy = datetime.now().strftime("%d/%m/%Y")
+    
+    # Convertir fechas en formato DD/MM/YYYY para comparación simple
+    torneos_activos = []
+    for t in torneos:
+        fecha_limite = t.get("fecha_limite", "")
+        if fecha_limite >= hoy:
+            torneos_activos.append(t)
+    
+    return torneos_activos
+
+
+def listar_todos_torneos():
+    """Retorna lista de todos los torneos."""
+    ensure_csv(TOURNAMENT_FILE, TOURNAMENT_HEADERS)
+    return read_csv_rows(TOURNAMENT_FILE)
+
+
+def actualizar_torneo(torneo_id: str, nombre: str = None, descripcion: str = None, fecha_limite: str = None, preguntas_por_dia: int = None):
+    """Actualiza los datos de un torneo."""
+    rows = read_csv_rows(TOURNAMENT_FILE)
+    found = False
+    
+    for row in rows:
+        if row.get("torneo_id") == torneo_id:
+            if nombre:
+                row["nombre"] = nombre
+            if descripcion:
+                row["descripcion"] = descripcion
+            if fecha_limite:
+                row["fecha_limite"] = fecha_limite
+            if preguntas_por_dia:
+                row["preguntas_por_dia"] = str(preguntas_por_dia)
+            found = True
+            break
+    
+    if not found:
+        raise ValueError(f"Torneo '{torneo_id}' no encontrado.")
+    
+    write_csv_rows(TOURNAMENT_FILE, rows, TOURNAMENT_HEADERS)
+
+
+def eliminar_torneo(torneo_id: str):
+    """Elimina un torneo."""
+    rows = read_csv_rows(TOURNAMENT_FILE)
+    rows_updated = [r for r in rows if r.get("torneo_id") != torneo_id]
+    
+    if len(rows_updated) == len(rows):
+        raise ValueError(f"Torneo '{torneo_id}' no encontrado.")
+    
+    write_csv_rows(TOURNAMENT_FILE, rows_updated, TOURNAMENT_HEADERS)
+    
+    # También eliminar las respuestas asociadas
+    resp_rows = read_csv_rows(TOURNAMENT_RESPONSES_FILE)
+    resp_rows_updated = [r for r in resp_rows if r.get("torneo_id") != torneo_id]
+    write_csv_rows(TOURNAMENT_RESPONSES_FILE, resp_rows_updated, TOURNAMENT_RESPONSES_HEADERS)
+
+
+def registrar_respuesta_torneo(torneo_id: str, usuario: str, pregunta_id: str, respuesta: str, es_correcta: bool):
+    """Registra una respuesta en un torneo."""
+    ensure_csv(TOURNAMENT_RESPONSES_FILE, TOURNAMENT_RESPONSES_HEADERS)
+    rows = read_csv_rows(TOURNAMENT_RESPONSES_FILE)
+    
+    ahora = datetime.now()
+    rows.append({
+        "torneo_id": torneo_id,
+        "usuario": usuario,
+        "pregunta_id": pregunta_id,
+        "respuesta": respuesta,
+        "es_correcta": "1" if es_correcta else "0",
+        "fecha": ahora.strftime("%d/%m/%Y"),
+        "hora": ahora.strftime("%H:%M:%S"),
+    })
+    write_csv_rows(TOURNAMENT_RESPONSES_FILE, rows, TOURNAMENT_RESPONSES_HEADERS)
+
+
+def contar_preguntas_hoy_alumno(torneo_id: str, usuario: str):
+    """Cuenta cuántas preguntas respondió un alumno hoy en un torneo."""
+    ensure_csv(TOURNAMENT_RESPONSES_FILE, TOURNAMENT_RESPONSES_HEADERS)
+    rows = read_csv_rows(TOURNAMENT_RESPONSES_FILE)
+    hoy = datetime.now().strftime("%d/%m/%Y")
+    
+    contador = 0
+    for row in rows:
+        if (row.get("torneo_id") == torneo_id and 
+            row.get("usuario") == usuario and 
+            row.get("fecha") == hoy):
+            contador += 1
+    
+    return contador
+
+
+def puede_responder_hoy(torneo_id: str, usuario: str, preguntas_por_dia: int):
+    """Verifica si un alumno puede responder más preguntas hoy en el torneo."""
+    preguntas_respondidas = contar_preguntas_hoy_alumno(torneo_id, usuario)
+    return preguntas_respondidas < preguntas_por_dia
+
+
+def obtener_respuestas_alumno_torneo(torneo_id: str, usuario: str):
+    """Obtiene todas las respuestas de un alumno en un torneo."""
+    ensure_csv(TOURNAMENT_RESPONSES_FILE, TOURNAMENT_RESPONSES_HEADERS)
+    rows = read_csv_rows(TOURNAMENT_RESPONSES_FILE)
+    
+    return [r for r in rows if r.get("torneo_id") == torneo_id and r.get("usuario") == usuario]
+
+
+def obtener_ranking_torneo(torneo_id: str):
+    """Obtiene el ranking de un torneo (alumnos ordenados por respuestas correctas)."""
+    ensure_csv(TOURNAMENT_RESPONSES_FILE, TOURNAMENT_RESPONSES_HEADERS)
+    rows = read_csv_rows(TOURNAMENT_RESPONSES_FILE)
+    
+    # Filtrar respuestas del torneo
+    respuestas_torneo = [r for r in rows if r.get("torneo_id") == torneo_id]
+    
+    # Contar respuestas correctas por alumno
+    ranking = {}
+    for row in respuestas_torneo:
+        usuario = row.get("usuario", "")
+        es_correcta = row.get("es_correcta") == "1"
+        
+        if usuario not in ranking:
+            ranking[usuario] = {"correctas": 0, "total": 0}
+        
+        ranking[usuario]["total"] += 1
+        if es_correcta:
+            ranking[usuario]["correctas"] += 1
+    
+    # Ordenar por respuestas correctas (descendente)
+    ranking_ordenado = sorted(ranking.items(), key=lambda x: x[1]["correctas"], reverse=True)
+    
+    return ranking_ordenado
+
+
+def obtener_estadisticas_torneo(torneo_id: str):
+    """Obtiene estadísticas generales de un torneo."""
+    ensure_csv(TOURNAMENT_RESPONSES_FILE, TOURNAMENT_RESPONSES_HEADERS)
+    rows = read_csv_rows(TOURNAMENT_RESPONSES_FILE)
+    
+    respuestas_torneo = [r for r in rows if r.get("torneo_id") == torneo_id]
+    
+    total_respuestas = len(respuestas_torneo)
+    respuestas_correctas = sum(1 for r in respuestas_torneo if r.get("es_correcta") == "1")
+    estudiantes_participantes = set(r.get("usuario") for r in respuestas_torneo)
+    
+    porcentaje_acierto = (respuestas_correctas / total_respuestas * 100) if total_respuestas > 0 else 0
+    
+    return {
+        "total_respuestas": total_respuestas,
+        "respuestas_correctas": respuestas_correctas,
+        "respuestas_incorrectas": total_respuestas - respuestas_correctas,
+        "porcentaje_acierto": round(porcentaje_acierto, 2),
+        "estudiantes_participantes": len(estudiantes_participantes),
+    }
