@@ -168,6 +168,40 @@ python test_csv_functions.py
 
 Todas las funciones están completamente probadas y validadas.
 
+## 📚 Datos de Referencia
+
+El proyecto incluye un script (`seed_questions.py`) que carga **120 preguntas de referencia**:
+
+- **3 grados**: 4° Grado, 5° Grado, 6° Grado
+- **4 materias por grado**: Matemática, Lengua, Ciencias, Sociales
+- **10 preguntas por materia**: Total de 120 preguntas
+
+### Cargar Preguntas de Referencia
+
+```bash
+python seed_questions.py
+```
+
+**Salida esperada:**
+```
+✓ Matemática: 10 preguntas cargadas
+✓ Lengua: 10 preguntas cargadas
+✓ Ciencias: 10 preguntas cargadas
+✓ Sociales: 10 preguntas cargadas
+...
+✅ TOTAL: 120 preguntas cargadas exitosamente
+```
+
+### Contenido de Preguntas
+
+Las preguntas están organizadas por nivel de dificultad:
+
+- **4° Grado**: Conceptos básicos y operaciones simples
+- **5° Grado**: Operaciones intermedias y conceptos expandidos
+- **6° Grado**: Conceptos avanzados y pensamiento crítico
+
+Todas las preguntas incluyen 4 opciones múltiples con una respuesta correcta claramente definida.
+
 ## 🔐 Seguridad
 
 ⚠️ **Nota**: Esta es una aplicación educativa. No usa cifrado de contraseñas ni bases de datos avanzadas. Para un entorno de producción real, se recomienda:
