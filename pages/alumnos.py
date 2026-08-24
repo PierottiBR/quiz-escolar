@@ -9,10 +9,11 @@ from app_utils import (
     get_student_by_login,
     guardar_alumno,
     iniciar_partida,
-    listar_materias_del_grado,
     read_csv_rows,
     registrar_resultado_alumno,
     cargar_preguntas_csv,
+    mezclar_opciones_preguntas,
+    mezclar_opciones_preguntas,
     listar_torneos_activos,
     obtener_torneo,
     registrar_respuesta_torneo,
@@ -80,78 +81,47 @@ else:
         st.session_state.game = None
         st.rerun()
 
-    st.header("Jugar")
     grado_jugador = st.session_state.student["grado"]
-    materias = listar_materias_del_grado(grado_jugador)
-    if not materias:
+    tab_jugar, tab_perfil = st.tabs(["Jugar", "Mi perfil y puntaje"])
+
+    with tab_jugar:
+        st.header("Jugar")
+        preguntas_nivel = cargar_preguntas_csv(grado_jugador)
+        if not preguntas_nivel:
             st.warning("Todavía no hay preguntas cargadas para este nivel.")
-    else:
-        materia_jugador = st.selectbox("Seleccioná la materia", materias, key="student_game_course")
-        if st.button("Iniciar juego"):
-            iniciar_partida(grado_jugador, materia_jugador)
+        else:
+            if st.button("Iniciar juego"):
+                iniciar_partida(grado_jugador)
 
-    st.divider()
-    st.subheader("Mi historial")
-    historial_alumno = get_historial_por_alumno(st.session_state.student["usuario"])
-    if not historial_alumno:
-        st.info("Todavía no realizaste ninguna partida.")
-    else:
-        st.dataframe(
-            [
-                {
-                    "Grado": fila.get("grado", ""),
-                    "Materia": fila.get("materia", ""),
-                    "Puntaje": f"{fila.get('puntaje', '0')}/{fila.get('total', '0')}",
-                    "Fecha": fila.get("fecha", ""),
-                }
-                for fila in historial_alumno
-            ],
-            use_container_width=True,
-            hide_index=True,
-        )
-
-    st.divider()
-    st.header("🏆 Torneos Disponibles")
-    
-    torneos_activos = listar_torneos_activos()
-    if not torneos_activos:
-        st.info("No hay torneos activos disponibles en este momento.")
-    else:
-        grado_alumno = st.session_state.student["grado"]
-        torneos_del_grado = [t for t in torneos_activos if t.get("grado") == grado_alumno]
-        
+        st.divider()
+        st.header("🏆 Torneos disponibles")
+        torneos_activos = listar_torneos_activos()
+        torneos_del_grado = [t for t in torneos_activos if t.get("grado") == grado_jugador]
         if not torneos_del_grado:
-            st.info(f"No hay torneos activos para tu nivel ({grado_alumno}).")
+            st.info("No hay torneos activos para tu nivel.")
         else:
             torneo_participar = st.selectbox(
-                "Selecciona un torneo para participar",
+                "Seleccioná un torneo",
                 [t["nombre"] for t in torneos_del_grado],
-                key="torneo_participar_select"
+                key="torneo_participar_select",
             )
-            
             torneo_obj = next(t for t in torneos_del_grado if t["nombre"] == torneo_participar)
-            
             st.markdown(f"**Descripción:** {torneo_obj['descripcion']}")
-            st.markdown(f"**Materia:** {torneo_obj['materia']}")
             st.markdown(f"**Fecha límite:** {torneo_obj['fecha_limite']}")
-            
             preguntas_hoy = contar_preguntas_hoy_alumno(torneo_obj["torneo_id"], st.session_state.student["usuario"])
             limite_diario = int(torneo_obj["preguntas_por_dia"])
-            
             st.info(f"Has respondido {preguntas_hoy}/{limite_diario} preguntas hoy")
-            
             if puede_responder_hoy(torneo_obj["torneo_id"], st.session_state.student["usuario"], limite_diario):
                 if st.button("Participar en torneo", key=f"btn_torneo_{torneo_obj['torneo_id']}"):
-                    # Cargar preguntas del torneo
-                    preguntas_torneo = cargar_preguntas_csv(grado_alumno, torneo_obj["materia"])
-                    
+                    preguntas_torneo = cargar_preguntas_csv(grado_jugador)
                     if not preguntas_torneo:
                         st.error("No hay preguntas cargadas para este torneo.")
                     else:
+                        preguntas_torneo = mezclar_opciones_preguntas(preguntas_torneo)
                         st.session_state.game = {
-                            "grado": grado_alumno,
-                            "curso": torneo_obj["materia"],
-                            "preguntas": preguntas_torneo[:1],  # Una pregunta por vez en torneos
+                            "grado": grado_jugador,
+                            "curso": "",
+                            "preguntas": preguntas_torneo[:1],
                             "indice": 0,
                             "puntaje": 0,
                             "finalizado": False,
@@ -161,99 +131,66 @@ else:
                         }
                         st.rerun()
             else:
-                st.warning(f"Has alcanzado tu límite diario de {limite_diario} preguntas para hoy. ¡Vuelve mañana!")
+                st.warning(f"Alcanzaste tu límite diario de {limite_diario} preguntas.")
 
-    if st.session_state.game:
-        juego = st.session_state.game
-        es_torneo = juego.get("es_torneo", False)
-        
-        if not juego["finalizado"]:
-            total = len(juego["preguntas"])
-            indice = juego["indice"]
-            pregunta = juego["preguntas"][indice]
-
-            st.subheader(f"{juego['grado']} · {juego['curso']}")
-            
-            if es_torneo:
-                torneo_info = obtener_torneo(juego["torneo_id"])
-                st.write(f"🏆 Torneo: {torneo_info['nombre']}")
-            
-            st.write(f"Pregunta {indice + 1} de {total}")
-            st.progress(indice / total)
-            st.markdown(f"### {pregunta['pregunta']}")
-
-            opcion_elegida = st.radio("Seleccioná la opción correcta:", pregunta["opciones"], key=f"radio_{indice}_{grado_jugador}_{juego['curso']}")
-
-            if st.button("Verificar respuesta"):
-                es_correcta = opcion_elegida == pregunta["respuesta"]
-                
-                # Registrar en torneo si aplica
+        if st.session_state.game:
+            juego = st.session_state.game
+            es_torneo = juego.get("es_torneo", False)
+            if not juego["finalizado"]:
+                total = len(juego["preguntas"])
+                indice = juego["indice"]
+                pregunta = juego["preguntas"][indice]
+                st.subheader(f"Nivel: {juego['grado']}")
                 if es_torneo:
-                    registrar_respuesta_torneo(
-                        juego["torneo_id"],
-                        st.session_state.student["usuario"],
-                        f"pregunta_{indice}",
-                        opcion_elegida,
-                        es_correcta
-                    )
-                
-                juego["respuesta_actual"] = opcion_elegida
-                if es_correcta:
-                    juego["puntaje"] += 1
-                    st.success("¡Correcto! Sumaste 1 punto.")
-                else:
-                    st.error(f"Incorrecto. La respuesta correcta era: {pregunta['respuesta']}")
-                st.session_state.game = juego
-
-                if es_torneo:
-                    # En torneos, terminar después de una pregunta
-                    juego["finalizado"] = True
+                    torneo_info = obtener_torneo(juego["torneo_id"])
+                    st.write(f"🏆 Torneo: {torneo_info['nombre']}")
+                st.write(f"Pregunta {indice + 1} de {total}")
+                st.progress(indice / total)
+                st.markdown(f"### {pregunta['pregunta']}")
+                opcion_elegida = st.radio("Seleccioná la opción correcta:", pregunta["opciones"], key=f"radio_{indice}_{grado_jugador}_{'torneo' if es_torneo else 'juego'}")
+                if st.button("Verificar respuesta"):
+                    es_correcta = opcion_elegida == pregunta["respuesta"]
+                    if es_torneo:
+                        registrar_respuesta_torneo(juego["torneo_id"], st.session_state.student["usuario"], f"pregunta_{indice}", opcion_elegida, es_correcta)
+                    juego["respuesta_actual"] = opcion_elegida
+                    if es_correcta:
+                        juego["puntaje"] += 1
+                        st.success("¡Correcto! Sumaste 1 punto.")
+                    else:
+                        st.error(f"Incorrecto. La respuesta correcta era: {pregunta['respuesta']}")
+                    if es_torneo or indice == total - 1:
+                        juego["finalizado"] = True
+                        if not es_torneo:
+                            registrar_resultado_alumno(st.session_state.student["usuario"], juego["grado"], juego["puntaje"], total)
                     st.session_state.game = juego
-                elif indice == total - 1:
-                    juego["finalizado"] = True
-                    registrar_resultado_alumno(
-                        st.session_state.student["usuario"],
-                        juego["grado"],
-                        juego["curso"],
-                        juego["puntaje"],
-                        len(juego["preguntas"]),
-                    )
-                    st.session_state.game = juego
-                else:
-                    if st.button("Siguiente pregunta"):
+                    if not es_torneo and indice < total - 1:
                         juego["indice"] += 1
                         juego["respuesta_actual"] = None
                         st.session_state.game = juego
                         st.rerun()
-
-            if juego.get("respuesta_actual") is not None and indice < total - 1:
-                st.info(f"Tu respuesta: {juego['respuesta_actual']}")
-        else:
-            st.balloons()
-            st.success("🎉 Pregunta completada")
-            
-            if juego.get("es_torneo"):
-                st.markdown(f"**Tu respuesta:** {juego['respuesta_actual']}")
-                st.markdown(f"**Resultado:** {'✓ Correcta' if juego.get('respuesta_actual') == juego['preguntas'][juego['indice']]['respuesta'] else '✗ Incorrecta'}")
             else:
-                st.markdown(
-                    f"### Resultado final\n"
-                    f"**Puntaje:** {juego['puntaje']} / {len(juego['preguntas'])}\n\n"
-                    f"**Nivel:** {juego['grado']}\n"
-                    f"**Curso:** {juego['curso']}"
-                )
-
-                if juego["puntaje"] == len(juego["preguntas"]):
-                    st.markdown("### ¡Excelente! Contestaste todo correctamente.")
-                elif juego["puntaje"] >= len(juego["preguntas"]) // 2:
-                    st.markdown("### ¡Muy bien! Seguí practicando.")
+                st.success("🎉 Pregunta completada")
+                if es_torneo:
+                    st.markdown(f"**Tu respuesta:** {juego['respuesta_actual']}")
+                    st.markdown(f"**Resultado:** {'Correcta' if juego['puntaje'] else 'Incorrecta'}")
                 else:
-                    st.markdown("### ¡Sigue intentando! Cada intento enseña.")
+                    st.markdown(f"### Resultado final\n**Puntaje:** {juego['puntaje']} / {len(juego['preguntas'])}\n\n**Nivel:** {juego['grado']}")
+                if st.button("Volver a jugar"):
+                    st.session_state.game = None
+                    st.rerun()
 
-            if st.button("Jugar otra vez"):
-                st.session_state.game = None
-                st.rerun()
-
-            if st.button("Volver al menú"):
-                st.session_state.game = None
-                st.rerun()
+    with tab_perfil:
+        st.header("Mi perfil")
+        st.write(f"**Usuario:** {st.session_state.student['usuario']}")
+        st.write(f"**Nivel educativo:** {grado_jugador}")
+        st.divider()
+        st.subheader("Mi historial de puntajes")
+        historial_alumno = get_historial_por_alumno(st.session_state.student["usuario"])
+        if not historial_alumno:
+            st.info("Todavía no realizaste ninguna partida.")
+        else:
+            st.dataframe(
+                [{"Nivel": fila.get("grado", ""), "Puntaje": f"{fila.get('puntaje', '0')}/{fila.get('total', '0')}", "Fecha": fila.get("fecha", "")} for fila in historial_alumno],
+                use_container_width=True,
+                hide_index=True,
+            )

@@ -26,7 +26,6 @@ from app_utils import (
     listar_docentes,
     cargar_preguntas_csv,
     GRADE_OPTIONS,
-    COURSE_OPTIONS,
 )
 
 
@@ -165,13 +164,12 @@ def test_preguntas():
     print("=" * 50)
     
     grado = GRADE_OPTIONS[0]
-    materia = COURSE_OPTIONS[0]
+    nivel = GRADE_OPTIONS[0]
     
     # Test 1: Crear pregunta
     try:
         guardar_pregunta_csv(
-            grado,
-            materia,
+            nivel,
             "¿Pregunta de prueba?",
             ["Opción A", "Opción B", "Opción C", "Opción D"],
             "Opción A"
@@ -182,7 +180,7 @@ def test_preguntas():
     
     # Test 2: Cargar preguntas
     try:
-        preguntas = cargar_preguntas_csv(grado, materia)
+        preguntas = cargar_preguntas_csv(nivel)
         if len(preguntas) > 0:
             print(f"✓ Cargar preguntas: OK ({len(preguntas)} preguntas)")
         else:
@@ -192,18 +190,17 @@ def test_preguntas():
     
     # Test 3: Actualizar pregunta
     try:
-        preguntas = cargar_preguntas_csv(grado, materia)
+        preguntas = cargar_preguntas_csv(nivel)
         if len(preguntas) > 0:
             idx_test = len(preguntas) - 1
             actualizar_pregunta_csv(
-                grado,
-                materia,
+                nivel,
                 idx_test,
                 "¿Pregunta actualizada?",
                 ["Actualizada A", "Actualizada B", "Actualizada C", "Actualizada D"],
                 "Actualizada A"
             )
-            preguntas_updated = cargar_preguntas_csv(grado, materia)
+            preguntas_updated = cargar_preguntas_csv(nivel)
             if preguntas_updated[idx_test]["pregunta"] == "¿Pregunta actualizada?":
                 print("✓ Actualizar pregunta: OK")
             else:
@@ -213,9 +210,9 @@ def test_preguntas():
     
     # Test 4: Eliminar pregunta
     try:
-        preguntas_before = cargar_preguntas_csv(grado, materia)
-        eliminar_pregunta_csv(grado, materia, len(preguntas_before) - 1)
-        preguntas_after = cargar_preguntas_csv(grado, materia)
+        preguntas_before = cargar_preguntas_csv(nivel)
+        eliminar_pregunta_csv(nivel, len(preguntas_before) - 1)
+        preguntas_after = cargar_preguntas_csv(nivel)
         if len(preguntas_after) < len(preguntas_before):
             print("✓ Eliminar pregunta: OK")
         else:

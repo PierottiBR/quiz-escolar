@@ -16,10 +16,9 @@ RESULT_FILE = DATA_DIR / "resultados.csv"
 TOURNAMENT_FILE = DATA_DIR / "torneos.csv"
 TOURNAMENT_RESPONSES_FILE = DATA_DIR / "respuestas_torneo.csv"
 GRADE_OPTIONS = ["Primaria", "Secundaria"]
-COURSE_OPTIONS = ["Matemática", "Lengua", "Ciencias", "Sociales"]
-QUESTION_HEADERS = ["materia", "pregunta", "opcion_1", "opcion_2", "opcion_3", "opcion_4", "respuesta"]
-RESULT_HEADERS = ["usuario", "grado", "materia", "puntaje", "total", "fecha"]
-TOURNAMENT_HEADERS = ["torneo_id", "nombre", "descripcion", "fecha_inicio", "fecha_limite", "preguntas_por_dia", "grado", "materia", "creador", "fecha_creacion"]
+QUESTION_HEADERS = ["pregunta", "opcion_1", "opcion_2", "opcion_3", "opcion_4", "respuesta"]
+RESULT_HEADERS = ["usuario", "grado", "puntaje", "total", "fecha"]
+TOURNAMENT_HEADERS = ["torneo_id", "nombre", "descripcion", "fecha_inicio", "fecha_limite", "preguntas_por_dia", "grado", "creador", "fecha_creacion"]
 TOURNAMENT_RESPONSES_HEADERS = ["torneo_id", "usuario", "pregunta_id", "respuesta", "es_correcta", "fecha", "hora"]
 
 
@@ -180,6 +179,7 @@ def ensure_seed_data():
         ensure_csv(grade_file, QUESTION_HEADERS)
         rows = read_csv_rows(grade_file)
         if rows:
+            write_csv_rows(grade_file, rows, QUESTION_HEADERS)
             continue
 
         seed_rows = [
@@ -192,7 +192,6 @@ def ensure_seed_data():
             grade_file,
             [
                 {
-                    "materia": r[0],
                     "pregunta": r[1],
                     "opcion_1": r[2],
                     "opcion_2": r[3],
@@ -213,30 +212,16 @@ def get_grade_file(grade: str) -> Path:
     return DATA_DIR / grade_to_filename(grade)
 
 
-def listar_materias_del_grado(grade: str):
-    materias = set()
-    with get_grade_file(grade).open("r", newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            materia = (row.get("materia") or "").strip()
-            if materia:
-                materias.add(materia)
-    return sorted(materias)
-
-
-def cargar_preguntas_csv(grade: str, curso: str):
+def cargar_preguntas_csv(grade: str, curso=None):
     rows = []
     with get_grade_file(grade).open("r", newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             if not row.get("pregunta"):
                 continue
-            if (row.get("materia") or "").strip() != curso:
-                continue
             rows.append(
                 {
                     "grado": grade,
-                    "curso": row["materia"],
                     "pregunta": row["pregunta"],
                     "opciones": [
                         row.get("opcion_1", ""),
@@ -261,12 +246,11 @@ def mezclar_opciones_preguntas(preguntas):
     return preguntas_mezcladas
 
 
-def guardar_pregunta_csv(grade: str, course: str, question: str, options, answer: str):
+def guardar_pregunta_csv(grade: str, question: str, options, answer: str, course=None):
     path = get_grade_file(grade)
     rows = read_csv_rows(path)
     rows.append(
         {
-            "materia": course,
             "pregunta": question,
             "opcion_1": options[0],
             "opcion_2": options[1],
@@ -278,24 +262,23 @@ def guardar_pregunta_csv(grade: str, course: str, question: str, options, answer
     write_csv_rows(path, rows, QUESTION_HEADERS)
 
 
-def eliminar_pregunta_csv(grade: str, course: str, idx: int):
+def eliminar_pregunta_csv(grade: str, idx: int, course=None):
     path = get_grade_file(grade)
     rows = read_csv_rows(path)
-    matches = [i for i, row in enumerate(rows) if (row.get("materia") or "").strip() == course]
-    if idx < 0 or idx >= len(matches):
+    if idx < 0 or idx >= len(rows):
         return
-    rows.pop(matches[idx])
+    rows.pop(idx)
     write_csv_rows(path, rows, QUESTION_HEADERS)
 
 
-def iniciar_partida(grade: str, course: str):
-    preguntas = cargar_preguntas_csv(grade, course)
+def iniciar_partida(grade: str, course=None):
+    preguntas = cargar_preguntas_csv(grade)
     if not preguntas:
-        st.warning("Todavía no hay preguntas cargadas para esa materia.")
+        st.warning("Todavía no hay preguntas cargadas para ese nivel.")
         return
     st.session_state.game = {
         "grado": grade,
-        "curso": course,
+        "curso": "",
         "preguntas": mezclar_opciones_preguntas(random.sample(preguntas, k=min(5, len(preguntas)))),
         "indice": 0,
         "puntaje": 0,
@@ -344,13 +327,17 @@ def actualizar_grado_alumno(username: str, nuevo_grado: str):
     write_csv_rows(STUDENT_FILE, rows, ["usuario", "password", "grado"])
 
 
-def registrar_resultado_alumno(usuario: str, grado: str, materia: str, puntaje: int, total: int):
+def registrar_resultado_alumno(usuario: str, grado: str, materia_or_puntaje, puntaje_or_total=None, total=None):
+    if total is None:
+        puntaje = materia_or_puntaje
+        total = puntaje_or_total
+    else:
+        puntaje = puntaje_or_total
     rows = read_csv_rows(RESULT_FILE)
     rows.append(
         {
             "usuario": usuario,
             "grado": grado,
-            "materia": materia,
             "puntaje": str(puntaje),
             "total": str(total),
             "fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
@@ -367,7 +354,7 @@ def get_historial_por_alumno(usuario: str):
     return [row for row in read_csv_rows(RESULT_FILE) if row.get("usuario") == usuario]
 
 
-def guardar_docente(username: str, password: str, curso: str):
+def guardar_docente(username: str, password: str, curso=""):
     rows = read_csv_rows(TEACHER_FILE)
     if any(r.get("usuario") == username for r in rows):
         raise ValueError("Ese docente ya existe.")
@@ -421,18 +408,13 @@ def eliminar_alumno(username: str):
     write_csv_rows(STUDENT_FILE, rows_updated, ["usuario", "password", "grado"])
 
 
-def actualizar_pregunta_csv(grade: str, course: str, idx: int, nueva_pregunta: str, nuevas_opciones: list, nueva_respuesta: str):
+def actualizar_pregunta_csv(grade: str, idx: int, nueva_pregunta: str, nuevas_opciones: list, nueva_respuesta: str, course=None):
     """Actualiza una pregunta existente por su índice."""
     path = get_grade_file(grade)
     rows = read_csv_rows(path)
-    matches = [i for i, row in enumerate(rows) if (row.get("materia") or "").strip() == course]
-    
-    if idx < 0 or idx >= len(matches):
+    if idx < 0 or idx >= len(rows):
         raise ValueError("Índice de pregunta inválido.")
-    
-    row_idx = matches[idx]
-    rows[row_idx] = {
-        "materia": course,
+    rows[idx] = {
         "pregunta": nueva_pregunta,
         "opcion_1": nuevas_opciones[0],
         "opcion_2": nuevas_opciones[1],
@@ -471,7 +453,7 @@ def listar_docentes():
 
 # ===== FUNCIONES DE TORNEOS =====
 
-def crear_torneo(nombre: str, descripcion: str, fecha_inicio: str, fecha_limite: str, preguntas_por_dia: int, grado: str, materia: str, creador: str):
+def crear_torneo(nombre: str, descripcion: str, fecha_inicio: str, fecha_limite: str, preguntas_por_dia: int, grado: str, creador: str, materia=None):
     """Crea un nuevo torneo."""
     ensure_csv(TOURNAMENT_FILE, TOURNAMENT_HEADERS)
     rows = read_csv_rows(TOURNAMENT_FILE)
@@ -487,7 +469,6 @@ def crear_torneo(nombre: str, descripcion: str, fecha_inicio: str, fecha_limite:
         "fecha_limite": fecha_limite,
         "preguntas_por_dia": str(preguntas_por_dia),
         "grado": grado,
-        "materia": materia,
         "creador": creador,
         "fecha_creacion": datetime.now().strftime("%d/%m/%Y %H:%M"),
     })

@@ -59,7 +59,7 @@ def cargar_preguntas_referencia():
     for nivel, materias in PREGUNTAS.items():
         for materia, preguntas in materias.items():
             for texto, opciones, respuesta in preguntas:
-                guardar_pregunta_csv(nivel, materia, texto, opciones, respuesta)
+                guardar_pregunta_csv(nivel, texto, opciones, respuesta)
                 total += 1
     print(f"{total} preguntas de referencia cargadas.")
 

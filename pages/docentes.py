@@ -2,7 +2,6 @@ import streamlit as st
 from datetime import datetime, timedelta
 
 from app_utils import (
-    COURSE_OPTIONS,
     GRADE_OPTIONS,
     LOGO_PATH,
     apply_custom_style,
@@ -65,7 +64,6 @@ if st.session_state.teacher is None:
             st.error("Usuario o contraseña incorrectos.")
 else:
     st.success(f"Docente activo: {st.session_state.teacher['usuario']}")
-    st.write(f"Curso asignado: {st.session_state.teacher['curso']}")
     if st.button("Cerrar sesión"):
         st.session_state.teacher = None
         st.rerun()
@@ -101,13 +99,12 @@ else:
     st.header("Crear docente")
     nuevo_docente = st.text_input("Usuario docente", key="new_teacher_user")
     nueva_pass_docente = st.text_input("Contraseña", type="password", key="new_teacher_pass")
-    nuevo_curso_docente = st.selectbox("Curso asignado", COURSE_OPTIONS, key="new_teacher_course")
     if st.button("Guardar docente"):
         if not nuevo_docente.strip() or not nueva_pass_docente.strip():
             st.warning("Completá usuario y contraseña.")
         else:
             try:
-                guardar_docente(nuevo_docente.strip(), nueva_pass_docente.strip(), nuevo_curso_docente)
+                guardar_docente(nuevo_docente.strip(), nueva_pass_docente.strip())
                 st.success("Docente creado correctamente.")
                 st.rerun()
             except ValueError as exc:
@@ -124,7 +121,6 @@ else:
                 {
                     "Usuario": fila.get("usuario", ""),
                     "Grado": fila.get("grado", ""),
-                    "Materia": fila.get("materia", ""),
                     "Puntaje": f"{fila.get('puntaje', '0')}/{fila.get('total', '0')}",
                     "Fecha": fila.get("fecha", ""),
                 }
@@ -145,7 +141,6 @@ else:
             st.dataframe(
                 [
                     {
-                        "Materia": fila.get("materia", ""),
                         "Puntaje": f"{fila.get('puntaje', '0')}/{fila.get('total', '0')}",
                         "Fecha": fila.get("fecha", ""),
                     }
@@ -160,11 +155,9 @@ else:
     st.divider()
     st.header("Banco de preguntas")
     grado_admin = st.selectbox("Nivel educativo", GRADE_OPTIONS, key="admin_grade")
-    curso_admin = st.selectbox("Materia", COURSE_OPTIONS, key="admin_course")
-
-    preguntas_admin = cargar_preguntas_csv(grado_admin, curso_admin)
+    preguntas_admin = cargar_preguntas_csv(grado_admin)
     if not preguntas_admin:
-        st.info("No hay preguntas cargadas para este curso.")
+        st.info("No hay preguntas cargadas para este nivel.")
     else:
         for i, pregunta in enumerate(preguntas_admin):
             with st.expander(f"Pregunta {i + 1}: {pregunta['pregunta'][:60]}..."):
@@ -172,8 +165,8 @@ else:
                 for option in pregunta["opciones"]:
                     st.write(f"- {option}")
                 st.write(f"Respuesta correcta: {pregunta['respuesta']}")
-                if st.button(f"Eliminar pregunta {i + 1}", key=f"del_q_{grado_admin}_{curso_admin}_{i}"):
-                    eliminar_pregunta_csv(grado_admin, curso_admin, i)
+                if st.button(f"Eliminar pregunta {i + 1}", key=f"del_q_{grado_admin}_{i}"):
+                    eliminar_pregunta_csv(grado_admin, i)
                     st.rerun()
 
     st.subheader("Agregar nueva pregunta")
@@ -195,7 +188,7 @@ else:
         elif not respuesta_correcta:
             st.warning("Selecciona la respuesta correcta.")
         else:
-            guardar_pregunta_csv(grado_admin, curso_admin, nueva_pregunta.strip(), [op.strip() for op in nuevas_opciones], respuesta_correcta.strip())
+            guardar_pregunta_csv(grado_admin, nueva_pregunta.strip(), [op.strip() for op in nuevas_opciones], respuesta_correcta.strip())
             st.success("Pregunta guardada correctamente.")
             st.rerun()
 
@@ -218,7 +211,6 @@ else:
             preguntas_dia = st.number_input("Preguntas por día", min_value=1, max_value=50, value=10, key="torneo_preguntas_dia")
         
         grado_torneo = st.selectbox("Nivel educativo", GRADE_OPTIONS, key="torneo_grado")
-        materia_torneo = st.selectbox("Materia", COURSE_OPTIONS, key="torneo_materia")
         
         if st.button("Crear torneo"):
             if not nombre_torneo.strip():
@@ -234,7 +226,6 @@ else:
                         fecha_limite=fecha_limite.strftime("%d/%m/%Y"),
                         preguntas_por_dia=int(preguntas_dia),
                         grado=grado_torneo,
-                        materia=materia_torneo,
                         creador=st.session_state.teacher["usuario"]
                     )
                     st.success(f"Torneo creado correctamente. ID: {torneo_id}")
@@ -250,7 +241,7 @@ else:
             st.info("No hay torneos activos en este momento.")
         else:
             for torneo in torneos_activos:
-                with st.expander(f"🏆 {torneo['nombre']} ({torneo['grado']} - {torneo['materia']})"):
+                with st.expander(f"🏆 {torneo['nombre']} ({torneo['grado']})"):
                     st.write(f"**Descripción:** {torneo['descripcion']}")
                     st.write(f"**Fecha inicio:** {torneo['fecha_inicio']}")
                     st.write(f"**Fecha límite:** {torneo['fecha_limite']}")

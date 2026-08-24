@@ -22,7 +22,6 @@ from app_utils import (
     obtener_ranking_torneo,
     obtener_estadisticas_torneo,
     GRADE_OPTIONS,
-    COURSE_OPTIONS,
 )
 
 
@@ -42,7 +41,6 @@ def test_torneo_crud():
             fecha_limite=manana,
             preguntas_por_dia=10,
             grado="Primaria",
-            materia="Matemática",
             creador="maestro"
         )
         print(f"✓ Crear torneo: OK (ID: {torneo_id})")
@@ -109,7 +107,6 @@ def test_respuestas_torneo():
             fecha_limite=manana,
             preguntas_por_dia=3,
             grado="Primaria",
-            materia="Matemática",
             creador="maestro"
         )
     except Exception as e:

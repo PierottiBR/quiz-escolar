@@ -108,13 +108,12 @@ Reemplaza `LOGO EP 5020 HD.jpg` con tu propio logo. Asegúrate de que el nombre 
 LOGO_PATH = BASE_DIR / "TU_LOGO.jpg"
 ```
 
-### Ajustar Grados y Materias
+### Ajustar Niveles Educativos
 
 Edita las constantes en `app_utils.py`:
 
 ```python
 GRADE_OPTIONS = ["Primaria", "Secundaria"]
-COURSE_OPTIONS = ["Matemática", "Lengua", "Ciencias", "Sociales"]
 ```
 
 ### Cambiar Credenciales por Defecto
@@ -122,7 +121,7 @@ COURSE_OPTIONS = ["Matemática", "Lengua", "Ciencias", "Sociales"]
 En `app_utils.py`, función `ensure_seed_data()`:
 
 ```python
-writer.writerow(["maestro", "escuela123", "Matemática"])
+writer.writerow(["maestro", "escuela123", ""])
 ```
 
 ## 💾 Datos y Almacenamiento
