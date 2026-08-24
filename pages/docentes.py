@@ -30,7 +30,7 @@ from app_utils import (
 )
 
 apply_custom_style()
-st.set_page_config(page_title="Docentes", page_icon="👩‍🏫", layout="wide")
+st.set_page_config(page_title="Docentes · Escuela Especial N° 502", page_icon="👩‍🏫", layout="wide")
 
 if "teacher" not in st.session_state:
     st.session_state.teacher = None

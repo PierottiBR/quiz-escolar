@@ -21,7 +21,7 @@ from app_utils import (
 )
 
 apply_custom_style()
-st.set_page_config(page_title="Alumnos", page_icon="🧑‍🎓", layout="wide")
+st.set_page_config(page_title="Alumnos · Escuela Especial N° 502", page_icon="🧑‍🎓", layout="wide")
 
 if "student" not in st.session_state:
     st.session_state.student = None

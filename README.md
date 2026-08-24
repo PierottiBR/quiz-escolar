@@ -91,10 +91,9 @@ quiz-escolar/
 │   ├── docentes.csv        # Cuentas de personal
 │   ├── alumnos.csv         # Cuentas de estudiantes
 │   ├── resultados.csv      # Historial de puntuaciones
-│   ├── 4to.csv             # Preguntas 4° Grado
-│   ├── 5to.csv             # Preguntas 5° Grado
-│   └── 6to.csv             # Preguntas 6° Grado
-├── LOGO ESCUELA 16.jpg     # Logo de la institución
+│   ├── primaria.csv        # Preguntas de Primaria
+│   └── secundaria.csv      # Preguntas de Secundaria
+├── LOGO EP 5020 HD.jpg     # Logo de la institución
 ├── .gitignore              # Configuración de Git
 └── README.md               # Este archivo
 ```
@@ -103,7 +102,7 @@ quiz-escolar/
 
 ### Cambiar el Logo
 
-Reemplaza `LOGO ESCUELA 16.jpg` con tu propio logo. Asegúrate de que el nombre del archivo sea el mismo o actualiza la referencia en `app_utils.py`:
+Reemplaza `LOGO EP 5020 HD.jpg` con tu propio logo. Asegúrate de que el nombre del archivo sea el mismo o actualiza la referencia en `app_utils.py`:
 
 ```python
 LOGO_PATH = BASE_DIR / "TU_LOGO.jpg"
@@ -114,7 +113,7 @@ LOGO_PATH = BASE_DIR / "TU_LOGO.jpg"
 Edita las constantes en `app_utils.py`:
 
 ```python
-GRADE_OPTIONS = ["4° Grado", "5° Grado", "6° Grado"]
+GRADE_OPTIONS = ["Primaria", "Secundaria"]
 COURSE_OPTIONS = ["Matemática", "Lengua", "Ciencias", "Sociales"]
 ```
 
@@ -250,7 +249,7 @@ Todas las funciones de torneos están validadas y funcionando correctamente.
 
 El proyecto incluye un script (`seed_questions.py`) que carga **120 preguntas de referencia**:
 
-- **3 grados**: 4° Grado, 5° Grado, 6° Grado
+- **2 niveles**: Primaria y Secundaria
 - **4 materias por grado**: Matemática, Lengua, Ciencias, Sociales
 - **10 preguntas por materia**: Total de 120 preguntas
 
@@ -274,9 +273,8 @@ python seed_questions.py
 
 Las preguntas están organizadas por nivel de dificultad:
 
-- **4° Grado**: Conceptos básicos y operaciones simples
-- **5° Grado**: Operaciones intermedias y conceptos expandidos
-- **6° Grado**: Conceptos avanzados y pensamiento crítico
+- **Primaria**: Conceptos básicos, operaciones simples e intermedias
+- **Secundaria**: Conceptos avanzados y pensamiento crítico
 
 Todas las preguntas incluyen 4 opciones múltiples con una respuesta correcta claramente definida.
 

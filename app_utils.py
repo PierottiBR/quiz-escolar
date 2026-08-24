@@ -7,7 +7,7 @@ import streamlit as st
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
-LOGO_PATH = BASE_DIR / "LOGO ESCUELA 16.jpg"
+LOGO_PATH = BASE_DIR / "LOGO EP 5020 HD.jpg"
 DATA_DIR.mkdir(exist_ok=True)
 
 TEACHER_FILE = DATA_DIR / "docentes.csv"
@@ -15,7 +15,7 @@ STUDENT_FILE = DATA_DIR / "alumnos.csv"
 RESULT_FILE = DATA_DIR / "resultados.csv"
 TOURNAMENT_FILE = DATA_DIR / "torneos.csv"
 TOURNAMENT_RESPONSES_FILE = DATA_DIR / "respuestas_torneo.csv"
-GRADE_OPTIONS = ["4° Grado", "5° Grado", "6° Grado"]
+GRADE_OPTIONS = ["Primaria", "Secundaria"]
 COURSE_OPTIONS = ["Matemática", "Lengua", "Ciencias", "Sociales"]
 QUESTION_HEADERS = ["materia", "pregunta", "opcion_1", "opcion_2", "opcion_3", "opcion_4", "respuesta"]
 RESULT_HEADERS = ["usuario", "grado", "materia", "puntaje", "total", "fecha"]
@@ -28,20 +28,20 @@ def apply_custom_style():
         """
         <style>
             :root {
-                --escuela-azul-oscuro: #0d3a66;
-                --escuela-azul-medio: #1d6ea7;
-                --escuela-azul-claro: #4ca3d9;
-                --escuela-blanco: #f4f7fb;
-                --escuela-plata: #dfeaf5;
+                --escuela-cielo: #7ba9dc;
+                --escuela-azul: #386da8;
+                --escuela-dorado: #cda66a;
+                --escuela-tinta: #171717;
+                --escuela-crema: #fffaf2;
             }
 
             html, body, [data-testid="stAppViewContainer"] {
-                background: linear-gradient(180deg, #e4e9ee 0%, #d9dfe7 100%);
-                color: var(--escuela-azul-oscuro);
+                background: linear-gradient(180deg, #f8f4ed 0%, #e9eef5 100%);
+                color: var(--escuela-tinta);
             }
 
             [data-testid="stSidebar"] {
-                background: linear-gradient(180deg, #123d67 0%, #1f5d93 100%);
+                background: linear-gradient(180deg, #234b78 0%, #386da8 100%);
                 border-right: 1px solid rgba(255,255,255,0.12);
             }
 
@@ -50,11 +50,11 @@ def apply_custom_style():
             }
 
             .brand-header {
-                background: linear-gradient(135deg, #173e68 0%, #2d628f 100%);
-                border-radius: 24px;
+                background: linear-gradient(135deg, #386da8 0%, #234b78 100%);
+                border-radius: 16px;
                 padding: 1.2rem 1.4rem;
-                box-shadow: 0 12px 25px rgba(18, 61, 103, 0.14);
-                border: 1px solid rgba(255,255,255,0.1);
+                box-shadow: 0 12px 25px rgba(35, 75, 120, 0.18);
+                border: 1px solid rgba(205, 166, 106, 0.45);
             }
 
             .brand-title {
@@ -68,7 +68,7 @@ def apply_custom_style():
 
             .brand-subtitle {
                 font-size: 0.98rem;
-                color: #eaf3fb;
+                color: #fff4df;
                 margin-top: 0.35rem;
                 margin-bottom: 0;
             }
@@ -79,33 +79,33 @@ def apply_custom_style():
 
             .stTabs [role="tab"] {
                 border-radius: 12px 12px 0 0;
-                background: rgba(23, 62, 104, 0.06);
-                color: var(--escuela-azul-oscuro);
+                background: rgba(205, 166, 106, 0.14);
+                color: #171717;
                 padding: 0.7rem 1.2rem;
                 font-weight: 700;
-                border: 1px solid rgba(23, 62, 104, 0.08);
+                border: 1px solid rgba(205, 166, 106, 0.36);
             }
 
             .stTabs [role="tab"][aria-selected="true"] {
-                background: linear-gradient(180deg, #123d67 0%, #1d6ea7 100%);
+                background: linear-gradient(180deg, #386da8 0%, #234b78 100%);
                 color: white;
             }
 
             .stButton > button {
-                background: linear-gradient(180deg, #2d628f 0%, #173e68 100%);
+                background: linear-gradient(180deg, #386da8 0%, #234b78 100%);
                 color: white;
                 border: none;
                 border-radius: 12px;
                 font-weight: 700;
-                box-shadow: 0 8px 18px rgba(23, 62, 104, 0.12);
+                box-shadow: 0 8px 18px rgba(35, 75, 120, 0.16);
             }
 
             .stTextInput > div > div > input,
             .stSelectbox > div > div,
             .stTextArea > div > div > textarea {
                 border-radius: 10px;
-                border: 1px solid rgba(18, 61, 103, 0.18);
-                background: rgba(255,255,255,0.34);
+                border: 1px solid rgba(56, 109, 168, 0.28);
+                background: rgba(255,255,255,0.52);
             }
 
             div[data-testid="stVerticalBlock"] > div {
@@ -123,11 +123,14 @@ def apply_custom_style():
 
 
 def normalize_grade_name(grade: str) -> str:
-    return grade.strip()
+    legacy_grades = {"4° Grado", "5° Grado", "6° Grado", "4to", "5to", "6to"}
+    cleaned_grade = grade.strip()
+    return "Primaria" if cleaned_grade in legacy_grades else cleaned_grade
 
 
 def grade_to_filename(grade: str) -> str:
-    return f"{grade.replace('°', '').replace(' ', '').lower()}.csv"
+    normalized_grade = normalize_grade_name(grade)
+    return f"{normalized_grade.replace('°', '').replace(' ', '').lower()}.csv"
 
 
 def ensure_csv(path: Path, headers):
@@ -149,7 +152,7 @@ def write_csv_rows(path: Path, rows, headers):
         writer = csv.DictWriter(f, fieldnames=headers)
         writer.writeheader()
         for row in rows:
-            writer.writerow(row)
+            writer.writerow({header: row.get(header, "") for header in headers})
 
 
 def ensure_seed_data():
@@ -161,12 +164,30 @@ def ensure_seed_data():
             writer.writerow(["maestro", "escuela123", "Matemática"])
 
     ensure_csv(STUDENT_FILE, ["usuario", "password", "grado"])
+    students = read_csv_rows(STUDENT_FILE)
+    students_changed = False
+    for student in students:
+        normalized_grade = normalize_grade_name(student.get("grado", ""))
+        if normalized_grade != student.get("grado", ""):
+            student["grado"] = normalized_grade
+            students_changed = True
+    if students_changed:
+        write_csv_rows(STUDENT_FILE, students, ["usuario", "password", "grado"])
     ensure_csv(RESULT_FILE, RESULT_HEADERS)
+
+    legacy_primary_rows = []
+    for legacy_file in DATA_DIR.glob("*.csv"):
+        if legacy_file.name.startswith(("4", "5", "6")):
+            legacy_primary_rows.extend(read_csv_rows(legacy_file))
 
     for grado in GRADE_OPTIONS:
         grade_file = DATA_DIR / grade_to_filename(grado)
         ensure_csv(grade_file, QUESTION_HEADERS)
         rows = read_csv_rows(grade_file)
+        if grado == "Primaria" and legacy_primary_rows and len(rows) <= 4:
+            write_csv_rows(grade_file, legacy_primary_rows, QUESTION_HEADERS)
+            continue
+
         if rows:
             continue
 
@@ -299,7 +320,7 @@ def guardar_alumno(username: str, password: str, grade: str):
     rows = read_csv_rows(STUDENT_FILE)
     if any(r.get("usuario") == username for r in rows):
         raise ValueError("Ese nombre de usuario ya existe.")
-    rows.append({"usuario": username, "password": password, "grado": grade})
+    rows.append({"usuario": username, "password": password, "grado": normalize_grade_name(grade)})
     write_csv_rows(STUDENT_FILE, rows, ["usuario", "password", "grado"])
 
 
@@ -316,7 +337,7 @@ def actualizar_grado_alumno(username: str, nuevo_grado: str):
     rows = read_csv_rows(STUDENT_FILE)
     for row in rows:
         if row.get("usuario") == username:
-            row["grado"] = nuevo_grado
+            row["grado"] = normalize_grade_name(nuevo_grado)
             break
     write_csv_rows(STUDENT_FILE, rows, ["usuario", "password", "grado"])
 

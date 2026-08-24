@@ -166,9 +166,11 @@ PREGUNTAS_6TO = {
 }
 
 TODOS_LOS_GRADOS = {
-    "4° Grado": PREGUNTAS_4TO,
-    "5° Grado": PREGUNTAS_5TO,
-    "6° Grado": PREGUNTAS_6TO,
+    "Primaria": {
+        materia: PREGUNTAS_4TO[materia] + PREGUNTAS_5TO[materia]
+        for materia in PREGUNTAS_4TO
+    },
+    "Secundaria": PREGUNTAS_6TO,
 }
 
 
