@@ -61,7 +61,7 @@ if st.session_state.student is None:
     st.subheader("Crear cuenta")
     nuevo_usuario = st.text_input("Nuevo usuario", key="new_student_user")
     nueva_pass = st.text_input("Contraseña", type="password", key="new_student_pass")
-    nuevo_grado = st.selectbox("Grado", GRADE_OPTIONS, key="new_student_grade")
+    nuevo_grado = st.selectbox("Nivel educativo", GRADE_OPTIONS, key="new_student_grade")
 
     if st.button("Crear cuenta"):
         if not nuevo_usuario.strip() or not nueva_pass.strip():
@@ -74,7 +74,7 @@ if st.session_state.student is None:
                 st.error(str(e))
 else:
     st.success(f"Alumno activo: {st.session_state.student['usuario']}")
-    st.write(f"Grado: {st.session_state.student['grado']}")
+    st.write(f"Nivel educativo: {st.session_state.student['grado']}")
     if st.button("Cerrar sesión"):
         st.session_state.student = None
         st.session_state.game = None
@@ -84,7 +84,7 @@ else:
     grado_jugador = st.session_state.student["grado"]
     materias = listar_materias_del_grado(grado_jugador)
     if not materias:
-        st.warning("Todavía no hay preguntas cargadas para este grado.")
+            st.warning("Todavía no hay preguntas cargadas para este nivel.")
     else:
         materia_jugador = st.selectbox("Seleccioná la materia", materias, key="student_game_course")
         if st.button("Iniciar juego"):
@@ -121,7 +121,7 @@ else:
         torneos_del_grado = [t for t in torneos_activos if t.get("grado") == grado_alumno]
         
         if not torneos_del_grado:
-            st.info(f"No hay torneos activos para tu grado ({grado_alumno}).")
+            st.info(f"No hay torneos activos para tu nivel ({grado_alumno}).")
         else:
             torneo_participar = st.selectbox(
                 "Selecciona un torneo para participar",
@@ -239,7 +239,7 @@ else:
                 st.markdown(
                     f"### Resultado final\n"
                     f"**Puntaje:** {juego['puntaje']} / {len(juego['preguntas'])}\n\n"
-                    f"**Grado:** {juego['grado']}\n"
+                    f"**Nivel:** {juego['grado']}\n"
                     f"**Curso:** {juego['curso']}"
                 )
 

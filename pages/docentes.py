@@ -79,7 +79,7 @@ else:
             with st.expander(f"{alumno['usuario']} · {alumno['grado']}"):
                 nuevo_pass = st.text_input(f"Nueva contraseña para {alumno['usuario']}", type="password", key=f"pw_{alumno['usuario']}")
                 nuevo_grado = st.selectbox(
-                    "Cambiar grado",
+                    "Cambiar nivel educativo",
                     GRADE_OPTIONS,
                     index=GRADE_OPTIONS.index(alumno.get("grado", GRADE_OPTIONS[0])),
                     key=f"g_{alumno['usuario']}",
@@ -92,9 +92,9 @@ else:
                             st.success("Contraseña actualizada.")
                             st.rerun()
                 with c2:
-                    if st.button("Actualizar grado", key=f"save_grade_{alumno['usuario']}"):
+                    if st.button("Actualizar nivel", key=f"save_grade_{alumno['usuario']}"):
                         actualizar_grado_alumno(alumno["usuario"], nuevo_grado)
-                        st.success("Grado actualizado.")
+                        st.success("Nivel educativo actualizado.")
                         st.rerun()
 
     st.divider()
@@ -159,7 +159,7 @@ else:
 
     st.divider()
     st.header("Banco de preguntas")
-    grado_admin = st.selectbox("Grado", GRADE_OPTIONS, key="admin_grade")
+    grado_admin = st.selectbox("Nivel educativo", GRADE_OPTIONS, key="admin_grade")
     curso_admin = st.selectbox("Materia", COURSE_OPTIONS, key="admin_course")
 
     preguntas_admin = cargar_preguntas_csv(grado_admin, curso_admin)
@@ -217,7 +217,7 @@ else:
         with col3:
             preguntas_dia = st.number_input("Preguntas por día", min_value=1, max_value=50, value=10, key="torneo_preguntas_dia")
         
-        grado_torneo = st.selectbox("Grado", GRADE_OPTIONS, key="torneo_grado")
+        grado_torneo = st.selectbox("Nivel educativo", GRADE_OPTIONS, key="torneo_grado")
         materia_torneo = st.selectbox("Materia", COURSE_OPTIONS, key="torneo_materia")
         
         if st.button("Crear torneo"):
