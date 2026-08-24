@@ -37,11 +37,11 @@ def test_torneo_crud():
         
         torneo_id = crear_torneo(
             nombre="Torneo Matemáticas 4°",
-            descripcion="Competencia de matemáticas para 4° grado",
+            descripcion="Competencia de matemáticas para Primaria",
             fecha_inicio=hoy,
             fecha_limite=manana,
             preguntas_por_dia=10,
-            grado="4° Grado",
+            grado="Primaria",
             materia="Matemática",
             creador="maestro"
         )
@@ -108,7 +108,7 @@ def test_respuestas_torneo():
             fecha_inicio=hoy,
             fecha_limite=manana,
             preguntas_por_dia=3,
-            grado="4° Grado",
+            grado="Primaria",
             materia="Matemática",
             creador="maestro"
         )

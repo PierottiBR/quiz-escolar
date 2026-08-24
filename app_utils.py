@@ -123,9 +123,8 @@ def apply_custom_style():
 
 
 def normalize_grade_name(grade: str) -> str:
-    legacy_grades = {"4° Grado", "5° Grado", "6° Grado", "4to", "5to", "6to"}
     cleaned_grade = grade.strip()
-    return "Primaria" if cleaned_grade in legacy_grades else cleaned_grade
+    return cleaned_grade if cleaned_grade in GRADE_OPTIONS else GRADE_OPTIONS[0]
 
 
 def grade_to_filename(grade: str) -> str:
@@ -175,19 +174,10 @@ def ensure_seed_data():
         write_csv_rows(STUDENT_FILE, students, ["usuario", "password", "grado"])
     ensure_csv(RESULT_FILE, RESULT_HEADERS)
 
-    legacy_primary_rows = []
-    for legacy_file in DATA_DIR.glob("*.csv"):
-        if legacy_file.name.startswith(("4", "5", "6")):
-            legacy_primary_rows.extend(read_csv_rows(legacy_file))
-
     for grado in GRADE_OPTIONS:
         grade_file = DATA_DIR / grade_to_filename(grado)
         ensure_csv(grade_file, QUESTION_HEADERS)
         rows = read_csv_rows(grade_file)
-        if grado == "Primaria" and legacy_primary_rows and len(rows) <= 4:
-            write_csv_rows(grade_file, legacy_primary_rows, QUESTION_HEADERS)
-            continue
-
         if rows:
             continue
 

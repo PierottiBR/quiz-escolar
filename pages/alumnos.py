@@ -182,7 +182,7 @@ else:
             st.progress(indice / total)
             st.markdown(f"### {pregunta['pregunta']}")
 
-            opcion_elegida = st.radio("Seleccioná la opción correcta:", pregunta["opciones"], key=f"radio_{indice}_{grado_alumno}_{juego['curso']}")
+            opcion_elegida = st.radio("Seleccioná la opción correcta:", pregunta["opciones"], key=f"radio_{indice}_{grado_jugador}_{juego['curso']}")
 
             if st.button("Verificar respuesta"):
                 es_correcta = opcion_elegida == pregunta["respuesta"]

@@ -36,7 +36,7 @@ def test_estudiantes():
     
     # Test 1: Crear alumno
     try:
-        guardar_alumno("test_alumno", "password123", "4° Grado")
+        guardar_alumno("test_alumno", "password123", "Primaria")
         print("✓ Crear alumno: OK")
     except Exception as e:
         print(f"✗ Crear alumno: FALLO - {e}")
@@ -64,9 +64,9 @@ def test_estudiantes():
     
     # Test 4: Actualizar grado
     try:
-        actualizar_grado_alumno("test_alumno", "5° Grado")
+        actualizar_grado_alumno("test_alumno", "Secundaria")
         alumno = obtener_alumno("test_alumno")
-        if alumno.get("grado") == "5° Grado":
+        if alumno.get("grado") == "Secundaria":
             print("✓ Actualizar grado: OK")
         else:
             print("✗ Actualizar grado: FALLO - Grado no se actualizó")
