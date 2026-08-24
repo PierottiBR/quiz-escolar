@@ -28,15 +28,16 @@ def apply_custom_style():
         """
         <style>
             :root {
-                --escuela-cielo: #7ba9dc;
+                --escuela-cielo: #8fb6d9;
                 --escuela-azul: #386da8;
                 --escuela-dorado: #cda66a;
-                --escuela-tinta: #171717;
-                --escuela-crema: #fffaf2;
+                --escuela-tinta: #1d2730;
+                --escuela-fondo: #d4e0e8;
+                --escuela-superficie: #e8e3d9;
             }
 
             html, body, [data-testid="stAppViewContainer"] {
-                background: linear-gradient(180deg, #f8f4ed 0%, #e9eef5 100%);
+                background: linear-gradient(135deg, #d4e0e8 0%, #c6d6e1 52%, #d9d5cc 100%);
                 color: var(--escuela-tinta);
             }
 
@@ -105,7 +106,7 @@ def apply_custom_style():
             .stTextArea > div > div > textarea {
                 border-radius: 10px;
                 border: 1px solid rgba(56, 109, 168, 0.28);
-                background: rgba(255,255,255,0.52);
+                background: rgba(232, 227, 217, 0.78);
             }
 
             div[data-testid="stVerticalBlock"] > div {
@@ -249,6 +250,17 @@ def cargar_preguntas_csv(grade: str, curso: str):
     return rows
 
 
+def mezclar_opciones_preguntas(preguntas):
+    """Devuelve preguntas con sus opciones en un orden aleatorio."""
+    preguntas_mezcladas = []
+    for pregunta in preguntas:
+        pregunta_copia = pregunta.copy()
+        pregunta_copia["opciones"] = list(pregunta["opciones"])
+        random.shuffle(pregunta_copia["opciones"])
+        preguntas_mezcladas.append(pregunta_copia)
+    return preguntas_mezcladas
+
+
 def guardar_pregunta_csv(grade: str, course: str, question: str, options, answer: str):
     path = get_grade_file(grade)
     rows = read_csv_rows(path)
@@ -284,7 +296,7 @@ def iniciar_partida(grade: str, course: str):
     st.session_state.game = {
         "grado": grade,
         "curso": course,
-        "preguntas": random.sample(preguntas, k=min(5, len(preguntas))),
+        "preguntas": mezclar_opciones_preguntas(random.sample(preguntas, k=min(5, len(preguntas)))),
         "indice": 0,
         "puntaje": 0,
         "finalizado": False,
