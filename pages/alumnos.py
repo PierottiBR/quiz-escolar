@@ -157,13 +157,15 @@ else:
                         if indice == total - 1:
                             juego["finalizado"] = True
                             if not es_torneo:
-                                registrar_resultado_alumno(st.session_state.student["usuario"], juego["grado"], juego["puntaje"], total)
+                                resultado_sincronizado = registrar_resultado_alumno(st.session_state.student["usuario"], juego["grado"], juego["puntaje"], total)
                         st.session_state.game = juego
                         if juego["finalizado"]:
                             incorrectas = total - juego["puntaje"]
                             st.success("🎉 Completaste todas las preguntas")
                             st.write(f"Respuestas correctas: {juego['puntaje']}")
                             st.write(f"Respuestas incorrectas: {incorrectas}")
+                            if not es_torneo and not resultado_sincronizado:
+                                st.info("El resultado quedó guardado localmente. GitHub Secrets aún no está configurado.")
                     
                 elif juego["respuesta_actual"] is not None:
                     es_correcta = juego["respuesta_actual"] == pregunta["respuesta"]

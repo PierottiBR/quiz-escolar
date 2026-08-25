@@ -188,8 +188,11 @@ else:
         elif not respuesta_correcta:
             st.warning("Selecciona la respuesta correcta.")
         else:
-            guardar_pregunta_csv(grado_admin, nueva_pregunta.strip(), [op.strip() for op in nuevas_opciones], respuesta_correcta.strip())
-            st.success("Pregunta guardada correctamente.")
+            sincronizada = guardar_pregunta_csv(grado_admin, nueva_pregunta.strip(), [op.strip() for op in nuevas_opciones], respuesta_correcta.strip())
+            if sincronizada:
+                st.success("Pregunta guardada y sincronizada con GitHub.")
+            else:
+                st.warning("Pregunta guardada localmente. Configura GitHub Secrets para sincronizarla en la nube.")
             st.rerun()
 
     st.divider()
