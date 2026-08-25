@@ -172,6 +172,24 @@ python test_csv_functions.py
 
 Todas las funciones están completamente probadas y validadas.
 
+### Sincronización con GitHub
+
+En Streamlit Cloud el disco local puede reiniciarse. Por eso las preguntas y los resultados se sincronizan con GitHub mediante la API REST:
+
+- `sincronizar_preguntas_github(nivel)` actualiza `data/primaria.csv` o `data/secundaria.csv`.
+- `sincronizar_resultados_github()` actualiza `data/resultados.csv`.
+- Al iniciar la app se descargan las versiones más recientes desde GitHub.
+
+Configura estos valores en **Streamlit Cloud > Settings > Secrets**:
+
+```toml
+GITHUB_TOKEN = "ghp_tu_token"
+GITHUB_REPOSITORY = "PierottiBR/quiz-escolar"
+GITHUB_BRANCH = "main"
+```
+
+El token debe tener permiso `Contents: Read and write`. Nunca lo guardes en el código ni lo subas al repositorio. Sin estos Secrets, la app continúa funcionando localmente, pero los cambios solo quedan en el entorno temporal.
+
 ## 🏆 Sistema de Torneos
 
 El sistema incluye un completo módulo de torneos que permite a los docentes organizar competencias educativas:

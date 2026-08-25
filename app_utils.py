@@ -1,7 +1,11 @@
 import csv
+import base64
+import json
 import random
 from datetime import datetime
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 import streamlit as st
 
@@ -154,7 +158,92 @@ def write_csv_rows(path: Path, rows, headers):
             writer.writerow({header: row.get(header, "") for header in headers})
 
 
+def _github_settings():
+    """Lee la configuración de GitHub desde Streamlit Secrets."""
+    try:
+        token = st.secrets.get("GITHUB_TOKEN", "")
+        repository = st.secrets.get("GITHUB_REPOSITORY", "PierottiBR/quiz-escolar")
+        branch = st.secrets.get("GITHUB_BRANCH", "main")
+    except Exception:
+        return None
+    if not token:
+        return None
+    return {"token": token, "repository": repository, "branch": branch}
+
+
+def sincronizar_archivo_github(path: Path, commit_message: str, descargar=False):
+    """Sube o descarga un CSV desde GitHub. Devuelve True si se sincronizó."""
+    settings = _github_settings()
+    if not settings:
+        return False
+
+    relative_path = path.relative_to(BASE_DIR).as_posix()
+    api_url = f"https://api.github.com/repos/{settings['repository']}/contents/{relative_path}"
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {settings['token']}",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "quiz-escolar-streamlit",
+    }
+
+    try:
+        get_request = Request(f"{api_url}?ref={settings['branch']}", headers=headers)
+        with urlopen(get_request, timeout=15) as response:
+            remote_file = json.loads(response.read().decode("utf-8"))
+        if descargar:
+            content = base64.b64decode(remote_file["content"]).decode("utf-8")
+            path.write_text(content, encoding="utf-8")
+            return True
+        sha = remote_file["sha"]
+    except HTTPError as error:
+        if error.code != 404 or descargar:
+            return False
+        sha = None
+    except (URLError, KeyError, ValueError):
+        return False
+
+    content = base64.b64encode(path.read_bytes()).decode("ascii")
+    payload = {
+        "message": commit_message,
+        "content": content,
+        "branch": settings["branch"],
+    }
+    if sha:
+        payload["sha"] = sha
+
+    try:
+        request = Request(
+            api_url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={**headers, "Content-Type": "application/json"},
+            method="PUT",
+        )
+        with urlopen(request, timeout=20):
+            return True
+    except (HTTPError, URLError):
+        return False
+
+
+def sincronizar_preguntas_github(grade: str):
+    return sincronizar_archivo_github(
+        get_grade_file(grade),
+        f"Actualizar preguntas de {normalize_grade_name(grade)}",
+    )
+
+
+def sincronizar_resultados_github():
+    return sincronizar_archivo_github(RESULT_FILE, "Actualizar resultados de Quiz Escolar")
+
+
 def ensure_seed_data():
+    for grade in GRADE_OPTIONS:
+        sincronizar_archivo_github(
+            DATA_DIR / grade_to_filename(grade),
+            f"Actualizar preguntas de {grade}",
+            descargar=True,
+        )
+    sincronizar_archivo_github(RESULT_FILE, "Actualizar resultados de Quiz Escolar", descargar=True)
+
     ensure_csv(TEACHER_FILE, ["usuario", "password", "curso"])
     teachers = read_csv_rows(TEACHER_FILE)
     if not teachers:
@@ -260,6 +349,7 @@ def guardar_pregunta_csv(grade: str, question: str, options, answer: str, course
         }
     )
     write_csv_rows(path, rows, QUESTION_HEADERS)
+    return sincronizar_preguntas_github(grade)
 
 
 def eliminar_pregunta_csv(grade: str, idx: int, course=None):
@@ -344,6 +434,7 @@ def registrar_resultado_alumno(usuario: str, grado: str, materia_or_puntaje, pun
         }
     )
     write_csv_rows(RESULT_FILE, rows, RESULT_HEADERS)
+    return sincronizar_resultados_github()
 
 
 def get_historial_resultados():
