@@ -140,7 +140,7 @@ else:
                     st.write(f"🏆 Torneo: {torneo_info['nombre']}")
                 st.write(f"Pregunta {indice + 1} de {total}")
                 st.progress(indice / total)
-                st.markdown(f"### {pregunta['pregunta']}")
+                st.markdown(f'<div class="question-heading">{pregunta["pregunta"]}</div>', unsafe_allow_html=True)
                 if juego["respuesta_actual"] is None:
                     opcion_elegida = st.radio("Seleccioná la opción correcta:", pregunta["opciones"], key=f"radio_{indice}_{grado_jugador}_{'torneo' if es_torneo else 'juego'}")
                     if st.button("Verificar respuesta"):

@@ -112,6 +112,63 @@ def apply_custom_style():
                 background: rgba(232, 227, 217, 0.78);
             }
 
+            div[data-testid="stRadio"] {
+                max-width: 920px;
+                margin: 1.2rem auto 1.5rem;
+            }
+
+            div[data-testid="stRadio"] > label {
+                display: block;
+                text-align: center;
+                font-size: 1.05rem;
+                font-weight: 700;
+                color: var(--escuela-tinta);
+                margin-bottom: 0.8rem;
+            }
+
+            div[data-testid="stRadio"] [role="radiogroup"] {
+                gap: 0.7rem;
+            }
+
+            div[data-testid="stRadio"] [role="radiogroup"] > label {
+                min-height: 3.3rem;
+                padding: 0.85rem 1rem;
+                border: 1px solid rgba(56, 109, 168, 0.25);
+                border-radius: 12px;
+                background: rgba(232, 227, 217, 0.72);
+                align-items: center;
+            }
+
+            div[data-testid="stRadio"] [role="radiogroup"] > label:hover {
+                border-color: var(--escuela-dorado);
+                background: rgba(205, 166, 106, 0.2);
+            }
+
+            div[data-testid="stButton"] {
+                max-width: 920px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            div[data-testid="stProgress"] {
+                max-width: 920px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .question-heading {
+                max-width: 920px;
+                margin: 1.6rem auto 0.8rem;
+                padding: 1.2rem 1.5rem;
+                border-left: 6px solid var(--escuela-dorado);
+                border-radius: 12px;
+                background: rgba(232, 227, 217, 0.7);
+                text-align: center;
+                font-size: clamp(1.35rem, 2.5vw, 2rem);
+                font-weight: 800;
+                color: var(--escuela-tinta);
+            }
+
             div[data-testid="stVerticalBlock"] > div {
                 background: rgba(255,255,255,0.08);
                 border-radius: 16px;
