@@ -279,7 +279,7 @@ def iniciar_partida(grade: str, course=None):
     st.session_state.game = {
         "grado": grade,
         "curso": "",
-        "preguntas": mezclar_opciones_preguntas(random.sample(preguntas, k=min(5, len(preguntas)))),
+        "preguntas": mezclar_opciones_preguntas(random.sample(preguntas, k=len(preguntas))),
         "indice": 0,
         "puntaje": 0,
         "finalizado": False,

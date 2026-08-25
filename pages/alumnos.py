@@ -108,30 +108,24 @@ else:
             torneo_obj = next(t for t in torneos_del_grado if t["nombre"] == torneo_participar)
             st.markdown(f"**Descripción:** {torneo_obj['descripcion']}")
             st.markdown(f"**Fecha límite:** {torneo_obj['fecha_limite']}")
-            preguntas_hoy = contar_preguntas_hoy_alumno(torneo_obj["torneo_id"], st.session_state.student["usuario"])
-            limite_diario = int(torneo_obj["preguntas_por_dia"])
-            st.info(f"Has respondido {preguntas_hoy}/{limite_diario} preguntas hoy")
-            if puede_responder_hoy(torneo_obj["torneo_id"], st.session_state.student["usuario"], limite_diario):
-                if st.button("Participar en torneo", key=f"btn_torneo_{torneo_obj['torneo_id']}"):
-                    preguntas_torneo = cargar_preguntas_csv(grado_jugador)
-                    if not preguntas_torneo:
-                        st.error("No hay preguntas cargadas para este torneo.")
-                    else:
-                        preguntas_torneo = mezclar_opciones_preguntas(preguntas_torneo)
-                        st.session_state.game = {
-                            "grado": grado_jugador,
-                            "curso": "",
-                            "preguntas": preguntas_torneo[:1],
-                            "indice": 0,
-                            "puntaje": 0,
-                            "finalizado": False,
-                            "respuesta_actual": None,
-                            "es_torneo": True,
-                            "torneo_id": torneo_obj["torneo_id"],
-                        }
-                        st.rerun()
-            else:
-                st.warning(f"Alcanzaste tu límite diario de {limite_diario} preguntas.")
+            if st.button("Participar en torneo", key=f"btn_torneo_{torneo_obj['torneo_id']}"):
+                preguntas_torneo = cargar_preguntas_csv(grado_jugador)
+                if not preguntas_torneo:
+                    st.error("No hay preguntas cargadas para este torneo.")
+                else:
+                    preguntas_torneo = mezclar_opciones_preguntas(preguntas_torneo)
+                    st.session_state.game = {
+                        "grado": grado_jugador,
+                        "curso": "",
+                        "preguntas": preguntas_torneo,
+                        "indice": 0,
+                        "puntaje": 0,
+                        "finalizado": False,
+                        "respuesta_actual": None,
+                        "es_torneo": True,
+                        "torneo_id": torneo_obj["torneo_id"],
+                    }
+                    st.rerun()
 
         if st.session_state.game:
             juego = st.session_state.game
@@ -147,23 +141,34 @@ else:
                 st.write(f"Pregunta {indice + 1} de {total}")
                 st.progress(indice / total)
                 st.markdown(f"### {pregunta['pregunta']}")
-                opcion_elegida = st.radio("Seleccioná la opción correcta:", pregunta["opciones"], key=f"radio_{indice}_{grado_jugador}_{'torneo' if es_torneo else 'juego'}")
-                if st.button("Verificar respuesta"):
-                    es_correcta = opcion_elegida == pregunta["respuesta"]
-                    if es_torneo:
-                        registrar_respuesta_torneo(juego["torneo_id"], st.session_state.student["usuario"], f"pregunta_{indice}", opcion_elegida, es_correcta)
-                    juego["respuesta_actual"] = opcion_elegida
-                    if es_correcta:
-                        juego["puntaje"] += 1
-                        st.success("¡Correcto! Sumaste 1 punto.")
-                    else:
-                        st.error(f"Incorrecto. La respuesta correcta era: {pregunta['respuesta']}")
-                    if es_torneo or indice == total - 1:
-                        juego["finalizado"] = True
-                        if not es_torneo:
-                            registrar_resultado_alumno(st.session_state.student["usuario"], juego["grado"], juego["puntaje"], total)
-                    st.session_state.game = juego
-                    if not es_torneo and indice < total - 1:
+                if juego["respuesta_actual"] is None:
+                    opcion_elegida = st.radio("Seleccioná la opción correcta:", pregunta["opciones"], key=f"radio_{indice}_{grado_jugador}_{'torneo' if es_torneo else 'juego'}")
+                    if st.button("Verificar respuesta"):
+                        es_correcta = opcion_elegida == pregunta["respuesta"]
+                        if es_torneo:
+                            registrar_respuesta_torneo(juego["torneo_id"], st.session_state.student["usuario"], f"pregunta_{indice}", opcion_elegida, es_correcta)
+                        juego["respuesta_actual"] = opcion_elegida
+                        if es_correcta:
+                            juego["puntaje"] += 1
+                            st.balloons()
+                            st.success("¡Correcto! Sumaste 1 punto.")
+                        else:
+                            st.error(f"Incorrecto. La respuesta correcta era: {pregunta['respuesta']}")
+                        if indice == total - 1:
+                            juego["finalizado"] = True
+                            if not es_torneo:
+                                registrar_resultado_alumno(st.session_state.student["usuario"], juego["grado"], juego["puntaje"], total)
+                        st.session_state.game = juego
+                        if juego["finalizado"]:
+                            incorrectas = total - juego["puntaje"]
+                            st.success("🎉 Completaste todas las preguntas")
+                            st.write(f"Respuestas correctas: {juego['puntaje']}")
+                            st.write(f"Respuestas incorrectas: {incorrectas}")
+                    
+                elif juego["respuesta_actual"] is not None:
+                    es_correcta = juego["respuesta_actual"] == pregunta["respuesta"]
+                    st.success("¡Correcto! Sumaste 1 punto." if es_correcta else f"Respuesta correcta: {pregunta['respuesta']}")
+                    if indice < total - 1 and st.button("Siguiente pregunta"):
                         juego["indice"] += 1
                         juego["respuesta_actual"] = None
                         st.session_state.game = juego
@@ -172,9 +177,12 @@ else:
                 st.success("🎉 Pregunta completada")
                 if es_torneo:
                     st.markdown(f"**Tu respuesta:** {juego['respuesta_actual']}")
-                    st.markdown(f"**Resultado:** {'Correcta' if juego['puntaje'] else 'Incorrecta'}")
+                    incorrectas = len(juego["preguntas"]) - juego["puntaje"]
+                    st.markdown(f"**Respuestas correctas:** {juego['puntaje']}")
+                    st.markdown(f"**Respuestas incorrectas:** {incorrectas}")
                 else:
-                    st.markdown(f"### Resultado final\n**Puntaje:** {juego['puntaje']} / {len(juego['preguntas'])}\n\n**Nivel:** {juego['grado']}")
+                    incorrectas = len(juego["preguntas"]) - juego["puntaje"]
+                    st.markdown(f"### Resultado final\n**Respuestas correctas:** {juego['puntaje']}\n**Respuestas incorrectas:** {incorrectas}\n\n**Nivel:** {juego['grado']}")
                 if st.button("Volver a jugar"):
                     st.session_state.game = None
                     st.rerun()
